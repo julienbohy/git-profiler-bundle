@@ -1,0 +1,40 @@
+{
+    "name": "julienbohy/git-profiler-bundle",
+    "description": "Affiche les informations Git (branche, commit, état) dans le Web Profiler de Symfony.",
+    "type": "symfony-bundle",
+    "license": "MIT",
+    "keywords": ["symfony", "bundle", "profiler", "git", "data-collector"],
+    "authors": [
+        {
+            "name": "Julien Bohy"
+        }
+    ],
+    "require": {
+        "php": ">=8.3",
+        "symfony/config": "^6.4 || ^7.0 || ^8.0",
+        "symfony/dependency-injection": "^6.4 || ^7.0 || ^8.0",
+        "symfony/http-kernel": "^6.4 || ^7.0 || ^8.0",
+        "symfony/process": "^6.4 || ^7.0 || ^8.0"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^11.5",
+        "symfony/framework-bundle": "^6.4 || ^7.0 || ^8.0",
+        "symfony/twig-bundle": "^6.4 || ^7.0 || ^8.0",
+        "symfony/web-profiler-bundle": "^6.4 || ^7.0 || ^8.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "JulienBohy\\GitProfilerBundle\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "JulienBohy\\GitProfilerBundle\\Tests\\": "tests/"
+        }
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}
