@@ -15,7 +15,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
- * Vérifie le câblage réel de config/services.php (sans booter tout le framework).
+ * Verifies the real wiring of config/services.php (without booting the whole framework).
  */
 final class ContainerTest extends TestCase
 {
@@ -35,7 +35,7 @@ final class ContainerTest extends TestCase
 
     public function testCollectorIsWiredAndReadsTheRepository(): void
     {
-        // La racine du bundle est un dépôt Git : le collector doit y lire des infos.
+        // The bundle root is a Git repository: the collector must read info from it.
         $container = $this->loadContainer();
         $container->getDefinition(GitDataCollector::class)->setPublic(true);
         $container->compile();
@@ -48,6 +48,15 @@ final class ContainerTest extends TestCase
         self::assertTrue($collector->isAvailable());
         self::assertNotSame('', (string) $collector->getBranch());
         self::assertMatchesRegularExpression('/^[0-9a-f]{7,}$/', (string) $collector->getShortCommit());
+
+        // The git state of the bundle repository is not controlled: we only check
+        // types and the absence of exceptions, not precise values.
+        self::assertIsInt($collector->getChangedFilesCount());
+        self::assertIsInt($collector->getUnpushedCommitsCount());
+        self::assertIsBool($collector->hasUpstream());
+        self::assertIsArray($collector->getWorkingFiles());
+        self::assertIsArray($collector->getUnpushedCommits());
+        self::assertIsArray($collector->getUnpushedFiles());
     }
 
     private function loadContainer(): ContainerBuilder

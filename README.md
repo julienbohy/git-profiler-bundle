@@ -1,22 +1,22 @@
 # GitProfilerBundle
 
-Bundle Symfony qui expose les informations Git du dépôt courant — **branche**, **commit court**
-et **état *dirty*** — dans un panneau dédié du **Web Profiler**.
+Symfony bundle that exposes the Git state of the current repository — **branch**, **short commit**,
+**modified files** and **unpushed commits** — in a dedicated **Web Profiler** panel.
 
-> 🚧 En cours de développement — pas encore publié sur Packagist.
+> 🚧 Work in progress — not published on Packagist yet.
 
-## Prérequis
+## Requirements
 
 - PHP **8.3+**
-- Symfony **6.4**, **7.x** ou **8.x**
-- Le binaire `git` disponible dans l'environnement d'exécution
-- La lecture Git s'appuie sur [`gitonomy/gitlib`](https://github.com/gitonomy/gitlib)
+- Symfony **6.4**, **7.x** or **8.x**
+- The `git` binary available in the runtime environment
+- Git reading relies on [`gitonomy/gitlib`](https://github.com/gitonomy/gitlib)
 
 ## Installation
 
-Tant que le bundle n'est pas sur Packagist, on le consomme via un dépôt Composer de type `path`.
+Until the bundle is on Packagist, consume it via a `path` Composer repository.
 
-Dans le `composer.json` de l'application :
+In the application `composer.json`:
 
 ```json
 {
@@ -30,17 +30,17 @@ Dans le `composer.json` de l'application :
 }
 ```
 
-Puis :
+Then:
 
 ```bash
 composer require --dev julienbohy/git-profiler-bundle:@dev
 ```
 
-> Une fois publié : `composer require --dev julienbohy/git-profiler-bundle`.
+> Once published: `composer require --dev julienbohy/git-profiler-bundle`.
 
-### Enregistrement du bundle
+### Registering the bundle
 
-Avec Symfony Flex, le bundle est enregistré automatiquement. Sinon, dans `config/bundles.php` :
+With Symfony Flex the bundle is registered automatically. Otherwise, in `config/bundles.php`:
 
 ```php
 return [
@@ -49,28 +49,50 @@ return [
 ];
 ```
 
-Le bundle n'a d'intérêt qu'en environnement de développement (Web Profiler) : `dev` (et `test`)
-suffisent.
+The bundle is only useful in a development environment (Web Profiler): `dev` (and `test`) are enough.
 
-## Utilisation
+## Usage
 
-Aucune configuration. Dès que le profiler est actif, un panneau **Git** apparaît dans la barre de
-debug et dans le profiler, indiquant :
+No configuration required. As soon as the profiler is active, a **Git** panel appears in the debug
+bar and in the profiler.
 
-- la **branche** courante (ou `HEAD` si détachée) ;
-- le **commit court** ;
-- si le *working tree* a des **modifications locales** (staged, non-staged ou fichiers non suivis).
+In the (compact) **toolbar** you get the current **branch** followed by **two counters**: the number
+of **locally modified files** (✎) and the number of **unpushed commits** (↑).
 
-Si le répertoire n'est pas un dépôt Git (ou si `git` est indisponible), le panneau l'indique
-proprement — aucune exception n'est levée.
+The **detailed panel** additionally shows:
+
+- the **short commit** of `HEAD`;
+- the **list of uncommitted working-tree files** (staged, unstaged, untracked) with their status
+  (added, modified, deleted, renamed…);
+- the **list of local commits ahead of the remote** (unpushed) — short hash, message, author, date —
+  **together with the list of files they touch**.
+
+Unpushed-commit detection:
+
+- it is based on the **upstream** branch (`@{u}`, e.g. `origin/main`); with no upstream configured,
+  the section says so and the counters show `–`;
+- the list of unpushed files is the **net diff** `@{u}..HEAD` (a file created then deleted within the
+  range therefore does not appear).
+
+If the directory is not a Git repository (or if `git` is unavailable), the panel states it cleanly —
+no exception is thrown.
 
 ## Architecture
 
-- `Git\GitRepositoryInterface` — port : `read(): ?GitInfo` (`null` = dégradation).
-- `Git\GitRepository` — adapter s'appuyant sur `gitonomy/gitlib`.
-- `Git\GitInfo` — value object immuable (`branch`, `shortCommit`, `isDirty`).
-- `DataCollector\GitDataCollector` — collecteur *sans logique*, délègue au port et expose les
-  données au template `@GitProfiler/Collector/git.html.twig`.
+- `Git\GitRepositoryInterface` — port: `read(): ?GitInfo` (`null` = degradation).
+- `Git\GitRepository` — adapter relying on `gitonomy/gitlib`.
+- `Git\GitInfo` — immutable value object (`branch`, `shortCommit`, `isDirty`, `workingFiles`,
+  `hasUpstream`, `unpushedCommits`, `unpushedFiles`).
+- `Git\ChangedFile` — immutable value object of a changed file (`path`, `status`, `stage`,
+  `oldPath`, `additions`, `deletions`).
+- `Git\FileStatus`, `Git\FileStage` — backed-string enums for a file's status (added, modified,
+  deleted, renamed, untracked) and location (staged, unstaged, untracked, committed), with their
+  display labels (`label()`).
+- `Git\UnpushedCommit` — immutable value object of an unpushed commit (`shortHash`, `subject`,
+  `author`, `date`).
+- `DataCollector\GitDataCollector` — logic-free collector, delegates to the port, flattens the value
+  objects into scalars (profiler-serializable) and exposes the data to the
+  `@GitProfiler/Collector/git.html.twig` template.
 
 ## Tests
 
@@ -79,6 +101,6 @@ composer install
 vendor/bin/phpunit
 ```
 
-## Licence
+## License
 
 MIT © 2026 Julien Bohy

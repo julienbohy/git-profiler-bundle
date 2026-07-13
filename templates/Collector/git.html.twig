@@ -5,12 +5,13 @@
         {% set icon %}
             <svg viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMinYMin meet" fill="#000000"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"><path d="M251.172 116.594L139.4 4.828c-6.433-6.437-16.873-6.437-23.314 0l-23.21 23.21 29.443 29.443c6.842-2.312 14.688-.761 20.142 4.693 5.48 5.489 7.02 13.402 4.652 20.266l28.375 28.376c6.865-2.365 14.786-.835 20.269 4.657 7.663 7.66 7.663 20.075 0 27.74-7.665 7.666-20.08 7.666-27.749 0-5.764-5.77-7.188-14.235-4.27-21.336l-26.462-26.462-.003 69.637a19.82 19.82 0 0 1 5.188 3.71c7.663 7.66 7.663 20.076 0 27.747-7.665 7.662-20.086 7.662-27.74 0-7.663-7.671-7.663-20.086 0-27.746a19.654 19.654 0 0 1 6.421-4.281V94.196a19.378 19.378 0 0 1-6.421-4.281c-5.806-5.798-7.202-14.317-4.227-21.446L81.47 39.442l-76.64 76.635c-6.44 6.443-6.44 16.884 0 23.322l111.774 111.768c6.435 6.438 16.873 6.438 23.316 0l111.251-111.249c6.438-6.44 6.438-16.887 0-23.324" fill="#DE4C36"></path></g></svg>
             <span class="sf-toolbar-value">{{ collector.branch }}</span>
-            {% if collector.dirty %}<span class="sf-toolbar-status sf-toolbar-status-yellow">●</span>{% endif %}
+            <span class="sf-toolbar-value" title="Locally modified files">&#9998; {{ collector.changedFilesCount }}</span>
+            <span class="sf-toolbar-value" title="Unpushed commits">&#8593; {{ collector.hasUpstream ? collector.unpushedCommitsCount : '–' }}</span>
         {% endset %}
 
         {% set text %}
             <div class="sf-toolbar-info-piece">
-                <b>Branche</b>
+                <b>Branch</b>
                 <span>{{ collector.branch }}</span>
             </div>
             <div class="sf-toolbar-info-piece">
@@ -18,8 +19,12 @@
                 <span>{{ collector.shortCommit }}</span>
             </div>
             <div class="sf-toolbar-info-piece">
-                <b>Working tree</b>
-                <span>{{ collector.dirty ? 'dirty' : 'clean' }}</span>
+                <b>Modified files</b>
+                <span>{{ collector.changedFilesCount }}</span>
+            </div>
+            <div class="sf-toolbar-info-piece">
+                <b>Unpushed commits</b>
+                <span>{{ collector.hasUpstream ? collector.unpushedCommitsCount : 'no upstream' }}</span>
             </div>
         {% endset %}
 
@@ -33,6 +38,12 @@
 <svg viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMinYMin meet" fill="#000000"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"><path d="M251.172 116.594L139.4 4.828c-6.433-6.437-16.873-6.437-23.314 0l-23.21 23.21 29.443 29.443c6.842-2.312 14.688-.761 20.142 4.693 5.48 5.489 7.02 13.402 4.652 20.266l28.375 28.376c6.865-2.365 14.786-.835 20.269 4.657 7.663 7.66 7.663 20.075 0 27.74-7.665 7.666-20.08 7.666-27.749 0-5.764-5.77-7.188-14.235-4.27-21.336l-26.462-26.462-.003 69.637a19.82 19.82 0 0 1 5.188 3.71c7.663 7.66 7.663 20.076 0 27.747-7.665 7.662-20.086 7.662-27.74 0-7.663-7.671-7.663-20.086 0-27.746a19.654 19.654 0 0 1 6.421-4.281V94.196a19.378 19.378 0 0 1-6.421-4.281c-5.806-5.798-7.202-14.317-4.227-21.446L81.47 39.442l-76.64 76.635c-6.44 6.443-6.44 16.884 0 23.322l111.774 111.768c6.435 6.438 16.873 6.438 23.316 0l111.251-111.249c6.438-6.44 6.438-16.887 0-23.324" fill="#DE4C36"></path></g></svg>
         </span>
         <strong>Git</strong>
+        {% if collector.available and (collector.changedFilesCount > 0 or (collector.hasUpstream and collector.unpushedCommitsCount > 0)) %}
+            <span class="count">
+                <span>{{ collector.changedFilesCount }}</span>
+                <span>{{ collector.hasUpstream ? collector.unpushedCommitsCount : 0 }}</span>
+            </span>
+        {% endif %}
     </span>
 {% endblock %}
 
@@ -43,20 +54,116 @@
         <div class="metrics">
             <div class="metric">
                 <span class="value">{{ collector.branch }}</span>
-                <span class="label">Branche</span>
+                <span class="label">Branch</span>
             </div>
             <div class="metric">
                 <span class="value"><code>{{ collector.shortCommit }}</code></span>
-                <span class="label">Commit court</span>
+                <span class="label">Short commit</span>
             </div>
             <div class="metric">
-                <span class="value">{{ collector.dirty ? 'Oui' : 'Non' }}</span>
-                <span class="label">Modifications locales</span>
+                <span class="value">{{ collector.changedFilesCount }}</span>
+                <span class="label">Modified files</span>
+            </div>
+            <div class="metric">
+                <span class="value">{{ collector.hasUpstream ? collector.unpushedCommitsCount : '–' }}</span>
+                <span class="label">Unpushed commits</span>
             </div>
         </div>
+
+        <h3>Locally modified files</h3>
+        {% if collector.workingFiles is empty %}
+            <div class="empty">
+                <p>Working tree clean — no modified files.</p>
+            </div>
+        {% else %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>File</th>
+                        <th>Status</th>
+                        <th>Stage</th>
+                        <th>+/-</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for file in collector.workingFiles %}
+                        <tr>
+                            <td>
+                                <code>{{ file.path }}</code>
+                                {% if file.oldPath %}<span class="text-muted">(formerly <code>{{ file.oldPath }}</code>)</span>{% endif %}
+                            </td>
+                            <td>{{ file.statusLabel }}</td>
+                            <td>{{ file.stageLabel }}</td>
+                            <td>{% if file.status != 'untracked' %}<span class="text-muted">+{{ file.additions }} −{{ file.deletions }}</span>{% endif %}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% endif %}
+
+        <h3>Unpushed commits</h3>
+        {% if not collector.hasUpstream %}
+            <div class="empty">
+                <p>No upstream branch configured for this branch.</p>
+            </div>
+        {% elseif collector.unpushedCommits is empty %}
+            <div class="empty">
+                <p>Up to date with upstream — nothing to push.</p>
+            </div>
+        {% else %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>Commit</th>
+                        <th>Message</th>
+                        <th>Author</th>
+                        <th>Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for commit in collector.unpushedCommits %}
+                        <tr>
+                            <td><code>{{ commit.shortHash }}</code></td>
+                            <td>{{ commit.subject }}</td>
+                            <td>{{ commit.author }}</td>
+                            <td>{{ commit.date|date('Y-m-d H:i') }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            <h4>Files touched by these commits</h4>
+            {% if collector.unpushedFiles is empty %}
+                <div class="empty">
+                    <p>No files (empty commits or merge).</p>
+                </div>
+            {% else %}
+                <table>
+                    <thead>
+                        <tr>
+                            <th>File</th>
+                            <th>Status</th>
+                            <th>+/-</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for file in collector.unpushedFiles %}
+                            <tr>
+                                <td>
+                                    <code>{{ file.path }}</code>
+                                    {% if file.oldPath %}<span class="text-muted">(formerly <code>{{ file.oldPath }}</code>)</span>{% endif %}
+                                </td>
+                                <td>{{ file.statusLabel }}</td>
+                                <td><span class="text-muted">+{{ file.additions }} −{{ file.deletions }}</span></td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% endif %}
+        {% endif %}
     {% else %}
         <div class="empty">
-            <p>Ce répertoire n'est pas un dépôt Git (ou « git » est indisponible).</p>
+            <p>This directory is not a Git repository (or “git” is unavailable).</p>
         </div>
     {% endif %}
 {% endblock %}

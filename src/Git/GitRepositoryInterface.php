@@ -7,10 +7,10 @@ namespace JulienBohy\GitProfilerBundle\Git;
 interface GitRepositoryInterface
 {
     /**
-     * Lit l'état Git du répertoire de travail.
+     * Reads the Git state of the working directory.
      *
-     * Retourne null si ce n'est pas un dépôt Git ou si la commande « git »
-     * est indisponible (dégradation propre, jamais d'exception).
+     * Returns null when the directory is not a Git repository or when the
+     * "git" command is unavailable (graceful degradation, never throws).
      */
     public function read(): ?GitInfo;
 }
