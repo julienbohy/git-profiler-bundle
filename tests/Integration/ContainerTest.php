@@ -48,6 +48,15 @@ final class ContainerTest extends TestCase
         self::assertTrue($collector->isAvailable());
         self::assertNotSame('', (string) $collector->getBranch());
         self::assertMatchesRegularExpression('/^[0-9a-f]{7,}$/', (string) $collector->getShortCommit());
+
+        // L'état git du dépôt du bundle n'est pas maîtrisé : on vérifie seulement
+        // les types et l'absence d'exception, pas de valeurs précises.
+        self::assertIsInt($collector->getChangedFilesCount());
+        self::assertIsInt($collector->getUnpushedCommitsCount());
+        self::assertIsBool($collector->hasUpstream());
+        self::assertIsArray($collector->getWorkingFiles());
+        self::assertIsArray($collector->getUnpushedCommits());
+        self::assertIsArray($collector->getUnpushedFiles());
     }
 
     private function loadContainer(): ContainerBuilder

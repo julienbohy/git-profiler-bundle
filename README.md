@@ -1,7 +1,7 @@
 # GitProfilerBundle
 
-Bundle Symfony qui expose les informations Git du dépôt courant — **branche**, **commit court**
-et **état *dirty*** — dans un panneau dédié du **Web Profiler**.
+Bundle Symfony qui expose l'état Git du dépôt courant — **branche**, **commit court**, **fichiers
+modifiés** et **commits non pushés** — dans un panneau dédié du **Web Profiler**.
 
 > 🚧 En cours de développement — pas encore publié sur Packagist.
 
@@ -55,11 +55,25 @@ suffisent.
 ## Utilisation
 
 Aucune configuration. Dès que le profiler est actif, un panneau **Git** apparaît dans la barre de
-debug et dans le profiler, indiquant :
+debug et dans le profiler.
 
-- la **branche** courante (ou `HEAD` si détachée) ;
-- le **commit court** ;
-- si le *working tree* a des **modifications locales** (staged, non-staged ou fichiers non suivis).
+Dans la **toolbar** (compacte), on trouve la **branche** courante suivie de **deux compteurs** :
+le nombre de **fichiers modifiés localement** (✎) et le nombre de **commits non pushés** (↑).
+
+Le **panneau détaillé** affiche en plus :
+
+- le **commit court** de `HEAD` ;
+- la **liste des fichiers du *working tree*** non commités (indexés, non indexés, non suivis) avec
+  leur statut (ajouté, modifié, supprimé, renommé…) ;
+- la **liste des commits locaux en avance sur le remote** (non pushés) — hash court, message,
+  auteur, date — **ainsi que la liste des fichiers qu'ils touchent**.
+
+Détection des commits non pushés :
+
+- elle se base sur la branche **upstream** (`@{u}`, ex. `origin/main`) ; sans upstream configuré,
+  la section l'indique proprement et les compteurs affichent `–` ;
+- la liste des fichiers non pushés correspond au **diff net** `@{u}..HEAD` (un fichier créé puis
+  supprimé dans l'intervalle n'apparaît donc pas).
 
 Si le répertoire n'est pas un dépôt Git (ou si `git` est indisponible), le panneau l'indique
 proprement — aucune exception n'est levée.
@@ -68,9 +82,15 @@ proprement — aucune exception n'est levée.
 
 - `Git\GitRepositoryInterface` — port : `read(): ?GitInfo` (`null` = dégradation).
 - `Git\GitRepository` — adapter s'appuyant sur `gitonomy/gitlib`.
-- `Git\GitInfo` — value object immuable (`branch`, `shortCommit`, `isDirty`).
-- `DataCollector\GitDataCollector` — collecteur *sans logique*, délègue au port et expose les
-  données au template `@GitProfiler/Collector/git.html.twig`.
+- `Git\GitInfo` — value object immuable (`branch`, `shortCommit`, `isDirty`, `workingFiles`,
+  `hasUpstream`, `unpushedCommits`, `unpushedFiles`).
+- `Git\ChangedFile` — value object immuable d'un fichier modifié (`path`, `status`, `stage`,
+  `oldPath`, `additions`, `deletions`).
+- `Git\UnpushedCommit` — value object immuable d'un commit non poussé (`shortHash`, `subject`,
+  `author`, `date`).
+- `DataCollector\GitDataCollector` — collecteur *sans logique*, délègue au port, aplatit les VO
+  en scalaires (sérialisables par le profiler) et expose les données au template
+  `@GitProfiler/Collector/git.html.twig`.
 
 ## Tests
 
