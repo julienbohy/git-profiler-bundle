@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace JulienBohy\GitProfilerBundle\Git;
 
 /**
- * Emplacement d'un fichier modifié dans le cycle Git.
+ * Location of a changed file in the Git lifecycle.
  */
 enum FileStage: string
 {
@@ -17,10 +17,10 @@ enum FileStage: string
     public function label(): string
     {
         return match ($this) {
-            self::Staged => 'Indexé',
-            self::Unstaged => 'Non indexé',
-            self::Untracked => 'Non suivi',
-            self::Committed => 'Commité',
+            self::Staged => 'Staged',
+            self::Unstaged => 'Unstaged',
+            self::Untracked => 'Untracked',
+            self::Committed => 'Committed',
         };
     }
 }

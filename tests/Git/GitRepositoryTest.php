@@ -58,7 +58,7 @@ final class GitRepositoryTest extends TestCase
     public function testDetectsDirtyWorkingTree(): void
     {
         $this->initRepositoryWithCommit();
-        file_put_contents($this->dir . '/file.txt', "modifié\n");
+        file_put_contents($this->dir . '/file.txt', "changed\n");
 
         $info = (new GitRepository($this->dir))->read();
 
@@ -69,13 +69,13 @@ final class GitRepositoryTest extends TestCase
     public function testListsWorkingTreeFilesWithStatus(): void
     {
         $this->initRepositoryWithCommit();
-        // Modifié mais non indexé.
-        file_put_contents($this->dir . '/file.txt', "modifié\n");
-        // Nouveau fichier indexé.
-        file_put_contents($this->dir . '/added.txt', "nouveau\n");
+        // Modified but not staged.
+        file_put_contents($this->dir . '/file.txt', "changed\n");
+        // New staged file.
+        file_put_contents($this->dir . '/added.txt', "new\n");
         $this->git('add', 'added.txt');
-        // Fichier non suivi.
-        file_put_contents($this->dir . '/untracked.txt', "libre\n");
+        // Untracked file.
+        file_put_contents($this->dir . '/untracked.txt', "loose\n");
 
         $info = (new GitRepository($this->dir))->read();
 
@@ -122,11 +122,11 @@ final class GitRepositoryTest extends TestCase
         $this->initRepositoryWithCommit();
         $this->configureUpstream();
 
-        // Deux commits locaux en avance sur l'upstream.
+        // Two local commits ahead of the upstream.
         file_put_contents($this->dir . '/feature.txt', "feature\n");
         $this->git('add', 'feature.txt');
         $this->git('commit', '-m', 'feature A');
-        file_put_contents($this->dir . '/file.txt', "changé\n");
+        file_put_contents($this->dir . '/file.txt', "changed\n");
         $this->git('commit', '-am', 'feature B');
 
         $info = (new GitRepository($this->dir))->read();
@@ -171,7 +171,7 @@ final class GitRepositoryTest extends TestCase
         $this->git('init', '-b', 'main');
         $this->git('config', 'user.email', 'test@example.com');
         $this->git('config', 'user.name', 'Test');
-        file_put_contents($this->dir . '/file.txt', "bonjour\n");
+        file_put_contents($this->dir . '/file.txt', "hello\n");
         $this->git('add', '.');
         $this->git('commit', '-m', 'init');
     }

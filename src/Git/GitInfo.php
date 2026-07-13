@@ -5,14 +5,14 @@ declare(strict_types=1);
 namespace JulienBohy\GitProfilerBundle\Git;
 
 /**
- * État Git immuable du dépôt courant.
+ * Immutable Git state of the current repository.
  */
 final readonly class GitInfo
 {
     /**
-     * @param list<ChangedFile>    $workingFiles    fichiers non commités du working tree
-     * @param list<UnpushedCommit> $unpushedCommits commits locaux en avance sur le remote
-     * @param list<ChangedFile>    $unpushedFiles   fichiers touchés par les commits non pushés
+     * @param list<ChangedFile>    $workingFiles    uncommitted files in the working tree
+     * @param list<UnpushedCommit> $unpushedCommits local commits ahead of the remote
+     * @param list<ChangedFile>    $unpushedFiles   files touched by the unpushed commits
      */
     public function __construct(
         public string $branch,

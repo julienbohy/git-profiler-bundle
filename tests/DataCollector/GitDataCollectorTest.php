@@ -34,7 +34,7 @@ final class GitDataCollectorTest extends TestCase
             'abc1234',
             true,
             workingFiles: [
-                // Même chemin, indexé ET non indexé : ne doit compter qu'une fois.
+                // Same path, staged AND unstaged: must be counted only once.
                 new ChangedFile('src/App.php', FileStatus::Modified, FileStage::Staged),
                 new ChangedFile('src/App.php', FileStatus::Modified, FileStage::Unstaged),
                 new ChangedFile('new.txt', FileStatus::Untracked, FileStage::Untracked),
@@ -55,14 +55,14 @@ final class GitDataCollectorTest extends TestCase
         self::assertSame(2, $collector->getChangedFilesCount());
         self::assertSame(2, $collector->getUnpushedCommitsCount());
 
-        // Les données exposées au template doivent être des scalaires (profiler sérialisable).
+        // The data exposed to the template must be scalars (profiler-serializable).
         $workingFiles = $collector->getWorkingFiles();
         self::assertCount(3, $workingFiles);
         self::assertSame('src/App.php', $workingFiles[0]['path']);
         self::assertSame('modified', $workingFiles[0]['status']);
-        self::assertSame('Modifié', $workingFiles[0]['statusLabel']);
+        self::assertSame('Modified', $workingFiles[0]['statusLabel']);
         self::assertSame('staged', $workingFiles[0]['stage']);
-        self::assertSame('Indexé', $workingFiles[0]['stageLabel']);
+        self::assertSame('Staged', $workingFiles[0]['stageLabel']);
 
         $commits = $collector->getUnpushedCommits();
         self::assertCount(2, $commits);

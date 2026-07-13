@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace JulienBohy\GitProfilerBundle\Git;
 
 /**
- * Nature d'un fichier modifié (par rapport à sa version de référence).
+ * Nature of a changed file (compared to its reference version).
  */
 enum FileStatus: string
 {
@@ -18,11 +18,11 @@ enum FileStatus: string
     public function label(): string
     {
         return match ($this) {
-            self::Added => 'Ajouté',
-            self::Modified => 'Modifié',
-            self::Deleted => 'Supprimé',
-            self::Renamed => 'Renommé',
-            self::Untracked => 'Non suivi',
+            self::Added => 'Added',
+            self::Modified => 'Modified',
+            self::Deleted => 'Deleted',
+            self::Renamed => 'Renamed',
+            self::Untracked => 'Untracked',
         };
     }
 }

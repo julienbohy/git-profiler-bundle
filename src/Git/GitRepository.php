@@ -12,7 +12,7 @@ use Gitonomy\Git\WorkingCopy;
 final readonly class GitRepository implements GitRepositoryInterface
 {
     /**
-     * Séparateur de champs pour le formatage de `git log` (unit separator, ASCII 0x1F).
+     * Field separator for `git log` formatting (unit separator, ASCII 0x1F).
      */
     private const FIELD_SEPARATOR = "\x1f";
 
@@ -25,10 +25,10 @@ final readonly class GitRepository implements GitRepositoryInterface
         try {
             $repository = new Repository($this->workingDirectory);
 
-            // Passe par `git` en direct (et non l'API objet getHead()/getLog()) pour ne pas
-            // instancier ReferenceBag/Log/RevisionList : ces classes de gitonomy 1.6 émettent
-            // des deprecations via le DebugClassLoader de Symfony (annotation @return absente).
-            // `rev-parse HEAD` échoue si le dépôt n'a aucun commit → dégradation via le catch.
+            // Use git directly (rather than the getHead()/getLog() object API) to avoid
+            // instantiating ReferenceBag/Log/RevisionList: in gitonomy 1.6 these classes
+            // trigger deprecations through Symfony's DebugClassLoader (missing @return).
+            // `rev-parse HEAD` fails when the repository has no commit → handled by the catch.
             $shortCommit = $this->run($repository, 'rev-parse', ['--short', 'HEAD']);
             $branch = $this->run($repository, 'rev-parse', ['--abbrev-ref', 'HEAD']);
 
@@ -46,7 +46,7 @@ final readonly class GitRepository implements GitRepositoryInterface
                 $unpushedFiles,
             );
         } catch (\Throwable) {
-            // Pas un dépôt Git, dépôt sans commit, ou git indisponible : dégradation propre.
+            // Not a Git repository, repository without commit, or git unavailable: degrade gracefully.
             return null;
         }
     }
@@ -74,17 +74,17 @@ final readonly class GitRepository implements GitRepositoryInterface
     }
 
     /**
-     * Lit les commits en avance sur l'upstream et les fichiers qu'ils touchent.
+     * Reads the commits ahead of the upstream and the files they touch.
      *
-     * Isolé dans son propre try/catch : sans upstream configuré (`@{u}` absent),
-     * git lève une exception qui ne doit pas casser la lecture branche/commit.
+     * Wrapped in its own try/catch: without a configured upstream (`@{u}` missing),
+     * git throws, and that must not break the branch/commit lookup.
      *
      * @return array{0: bool, 1: list<UnpushedCommit>, 2: list<ChangedFile>}
      */
     private function collectUnpushed(Repository $repository): array
     {
         try {
-            // Lève si aucun upstream n'est configuré (repository en mode debug par défaut).
+            // Throws when no upstream is configured (repository in debug mode by default).
             $repository->run('rev-parse', ['--verify', '--quiet', '@{u}']);
 
             $format = implode(self::FIELD_SEPARATOR, ['%H', '%s', '%an', '%aI']);
@@ -99,7 +99,7 @@ final readonly class GitRepository implements GitRepositoryInterface
 
             return [true, $commits, $files];
         } catch (\Throwable) {
-            // Pas d'upstream, pas de remote, ou HEAD détaché : dégradation locale.
+            // No upstream, no remote, or detached HEAD: local degradation.
             return [false, [], []];
         }
     }
@@ -130,8 +130,8 @@ final readonly class GitRepository implements GitRepositoryInterface
     }
 
     /**
-     * Reproduit Repository::getDiff() sans instancier RevisionList (qui déclenche une
-     * deprecation) : Diff::parse() est public et se contente de la sortie brute de `git diff`.
+     * Reproduces Repository::getDiff() without instantiating RevisionList (which triggers a
+     * deprecation): Diff::parse() is public and only needs the raw `git diff` output.
      *
      * @return list<File>
      */

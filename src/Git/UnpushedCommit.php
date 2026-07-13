@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace JulienBohy\GitProfilerBundle\Git;
 
 /**
- * Un commit local en avance sur le remote (pas encore poussé), immuable.
+ * A local commit ahead of the remote (not pushed yet), immutable.
  */
 final readonly class UnpushedCommit
 {

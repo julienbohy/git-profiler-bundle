@@ -98,8 +98,8 @@ final class GitDataCollector extends AbstractDataCollector
     }
 
     /**
-     * Nombre de fichiers distincts du working tree (un fichier partiellement
-     * indexé apparaît en staged ET unstaged mais ne compte qu'une fois).
+     * Number of distinct working-tree files (a partially staged file shows up
+     * both as staged AND unstaged but is counted only once).
      */
     public function getChangedFilesCount(): int
     {

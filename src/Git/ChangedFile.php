@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace JulienBohy\GitProfilerBundle\Git;
 
 /**
- * Un fichier modifié, immuable.
+ * A changed file, immutable.
  *
- * Sert aussi bien pour le working tree (staged / unstaged / untracked) que pour
- * les fichiers touchés par des commits non pushés (stage « committed »).
+ * Used both for the working tree (staged / unstaged / untracked) and for files
+ * touched by unpushed commits (the "committed" stage).
  */
 final readonly class ChangedFile
 {
