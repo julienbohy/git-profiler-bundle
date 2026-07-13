@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace JulienBohy\GitProfilerBundle\Tests\Git;
 
 use JulienBohy\GitProfilerBundle\Git\ChangedFile;
+use JulienBohy\GitProfilerBundle\Git\FileStage;
+use JulienBohy\GitProfilerBundle\Git\FileStatus;
 use JulienBohy\GitProfilerBundle\Git\GitRepository;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Process\Process;
@@ -82,9 +84,9 @@ final class GitRepositoryTest extends TestCase
 
         $byStage = $this->indexByStagePath($info->workingFiles);
 
-        self::assertSame('added', $byStage['staged']['added.txt'] ?? null);
-        self::assertSame('modified', $byStage['unstaged']['file.txt'] ?? null);
-        self::assertSame('untracked', $byStage['untracked']['untracked.txt'] ?? null);
+        self::assertSame(FileStatus::Added, $byStage['staged']['added.txt'] ?? null);
+        self::assertSame(FileStatus::Modified, $byStage['unstaged']['file.txt'] ?? null);
+        self::assertSame(FileStatus::Untracked, $byStage['untracked']['untracked.txt'] ?? null);
     }
 
     public function testKeepsPartiallyStagedFileInBothStages(): void
@@ -99,8 +101,8 @@ final class GitRepositoryTest extends TestCase
         self::assertNotNull($info);
         $byStage = $this->indexByStagePath($info->workingFiles);
 
-        self::assertSame('modified', $byStage['staged']['file.txt'] ?? null);
-        self::assertSame('modified', $byStage['unstaged']['file.txt'] ?? null);
+        self::assertSame(FileStatus::Modified, $byStage['staged']['file.txt'] ?? null);
+        self::assertSame(FileStatus::Modified, $byStage['unstaged']['file.txt'] ?? null);
     }
 
     public function testNoUpstreamConfigured(): void
@@ -147,7 +149,7 @@ final class GitRepositoryTest extends TestCase
         self::assertContains('feature.txt', $paths);
         self::assertContains('file.txt', $paths);
         foreach ($info->unpushedFiles as $file) {
-            self::assertSame('committed', $file->stage);
+            self::assertSame(FileStage::Committed, $file->stage);
         }
     }
 
@@ -184,13 +186,13 @@ final class GitRepositoryTest extends TestCase
     /**
      * @param list<ChangedFile> $files
      *
-     * @return array<string, array<string, string>> [stage => [path => status]]
+     * @return array<string, array<string, FileStatus>> [stage => [path => status]]
      */
     private function indexByStagePath(array $files): array
     {
         $index = [];
         foreach ($files as $file) {
-            $index[$file->stage][$file->path] = $file->status;
+            $index[$file->stage->value][$file->path] = $file->status;
         }
 
         return $index;

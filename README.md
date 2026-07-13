@@ -86,6 +86,9 @@ proprement — aucune exception n'est levée.
   `hasUpstream`, `unpushedCommits`, `unpushedFiles`).
 - `Git\ChangedFile` — value object immuable d'un fichier modifié (`path`, `status`, `stage`,
   `oldPath`, `additions`, `deletions`).
+- `Git\FileStatus`, `Git\FileStage` — enums *backed string* du statut (ajouté, modifié, supprimé,
+  renommé, non suivi) et de l'emplacement (indexé, non indexé, non suivi, commité) d'un fichier,
+  avec leurs libellés d'affichage (`label()`).
 - `Git\UnpushedCommit` — value object immuable d'un commit non poussé (`shortHash`, `subject`,
   `author`, `date`).
 - `DataCollector\GitDataCollector` — collecteur *sans logique*, délègue au port, aplatit les VO

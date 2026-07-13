@@ -6,6 +6,8 @@ namespace JulienBohy\GitProfilerBundle\Tests\DataCollector;
 
 use JulienBohy\GitProfilerBundle\DataCollector\GitDataCollector;
 use JulienBohy\GitProfilerBundle\Git\ChangedFile;
+use JulienBohy\GitProfilerBundle\Git\FileStage;
+use JulienBohy\GitProfilerBundle\Git\FileStatus;
 use JulienBohy\GitProfilerBundle\Git\GitInfo;
 use JulienBohy\GitProfilerBundle\Git\GitRepositoryInterface;
 use JulienBohy\GitProfilerBundle\Git\UnpushedCommit;
@@ -33,9 +35,9 @@ final class GitDataCollectorTest extends TestCase
             true,
             workingFiles: [
                 // Même chemin, indexé ET non indexé : ne doit compter qu'une fois.
-                new ChangedFile('src/App.php', 'modified', 'staged'),
-                new ChangedFile('src/App.php', 'modified', 'unstaged'),
-                new ChangedFile('new.txt', 'untracked', 'untracked'),
+                new ChangedFile('src/App.php', FileStatus::Modified, FileStage::Staged),
+                new ChangedFile('src/App.php', FileStatus::Modified, FileStage::Unstaged),
+                new ChangedFile('new.txt', FileStatus::Untracked, FileStage::Untracked),
             ],
             hasUpstream: true,
             unpushedCommits: [
@@ -43,7 +45,7 @@ final class GitDataCollectorTest extends TestCase
                 new UnpushedCommit('bbbbbbb', 'feature B', 'Bob', new \DateTimeImmutable('2026-07-13T11:00:00+00:00')),
             ],
             unpushedFiles: [
-                new ChangedFile('src/App.php', 'modified', 'committed', additions: 3, deletions: 1),
+                new ChangedFile('src/App.php', FileStatus::Modified, FileStage::Committed, additions: 3, deletions: 1),
             ],
         );
 
@@ -57,7 +59,10 @@ final class GitDataCollectorTest extends TestCase
         $workingFiles = $collector->getWorkingFiles();
         self::assertCount(3, $workingFiles);
         self::assertSame('src/App.php', $workingFiles[0]['path']);
+        self::assertSame('modified', $workingFiles[0]['status']);
+        self::assertSame('Modifié', $workingFiles[0]['statusLabel']);
         self::assertSame('staged', $workingFiles[0]['stage']);
+        self::assertSame('Indexé', $workingFiles[0]['stageLabel']);
 
         $commits = $collector->getUnpushedCommits();
         self::assertCount(2, $commits);

@@ -59,15 +59,15 @@ final readonly class GitRepository implements GitRepositoryInterface
         $files = [];
 
         foreach ($workingCopy->getDiffStaged()->getFiles() as $file) {
-            $files[] = $this->changedFile($file, 'staged');
+            $files[] = $this->changedFile($file, FileStage::Staged);
         }
 
         foreach ($workingCopy->getDiffPending()->getFiles() as $file) {
-            $files[] = $this->changedFile($file, 'unstaged');
+            $files[] = $this->changedFile($file, FileStage::Unstaged);
         }
 
         foreach ($workingCopy->getUntrackedFiles() as $path) {
-            $files[] = new ChangedFile($path, 'untracked', 'untracked');
+            $files[] = new ChangedFile($path, FileStatus::Untracked, FileStage::Untracked);
         }
 
         return $files;
@@ -94,7 +94,7 @@ final readonly class GitRepository implements GitRepositoryInterface
 
             $files = [];
             foreach ($this->diffFiles($repository, '@{u}..HEAD') as $file) {
-                $files[] = $this->changedFile($file, 'committed');
+                $files[] = $this->changedFile($file, FileStage::Committed);
             }
 
             return [true, $commits, $files];
@@ -144,10 +144,7 @@ final readonly class GitRepository implements GitRepositoryInterface
         return Diff::parse($raw)->getFiles();
     }
 
-    /**
-     * @param 'staged'|'unstaged'|'committed' $stage
-     */
-    private function changedFile(File $file, string $stage): ChangedFile
+    private function changedFile(File $file, FileStage $stage): ChangedFile
     {
         return new ChangedFile(
             $file->getName(),
@@ -159,16 +156,13 @@ final readonly class GitRepository implements GitRepositoryInterface
         );
     }
 
-    /**
-     * @return 'added'|'modified'|'deleted'|'renamed'
-     */
-    private function statusOf(File $file): string
+    private function statusOf(File $file): FileStatus
     {
         return match (true) {
-            $file->isRename() => 'renamed',
-            $file->isCreation() => 'added',
-            $file->isDeletion() => 'deleted',
-            default => 'modified',
+            $file->isRename() => FileStatus::Renamed,
+            $file->isCreation() => FileStatus::Added,
+            $file->isDeletion() => FileStatus::Deleted,
+            default => FileStatus::Modified,
         };
     }
 

@@ -48,20 +48,6 @@
 {% endblock %}
 
 {% block panel %}
-    {% set status_labels = {
-        'added': 'Ajouté',
-        'modified': 'Modifié',
-        'deleted': 'Supprimé',
-        'renamed': 'Renommé',
-        'untracked': 'Non suivi',
-    } %}
-    {% set stage_labels = {
-        'staged': 'Indexé',
-        'unstaged': 'Non indexé',
-        'untracked': 'Non suivi',
-        'committed': 'Commité',
-    } %}
-
     <h2>Git</h2>
 
     {% if collector.available %}
@@ -106,8 +92,8 @@
                                 <code>{{ file.path }}</code>
                                 {% if file.oldPath %}<span class="text-muted">(anciennement <code>{{ file.oldPath }}</code>)</span>{% endif %}
                             </td>
-                            <td>{{ status_labels[file.status] ?? file.status }}</td>
-                            <td>{{ stage_labels[file.stage] ?? file.stage }}</td>
+                            <td>{{ file.statusLabel }}</td>
+                            <td>{{ file.stageLabel }}</td>
                             <td>{% if file.status != 'untracked' %}<span class="text-muted">+{{ file.additions }} −{{ file.deletions }}</span>{% endif %}</td>
                         </tr>
                     {% endfor %}
@@ -167,7 +153,7 @@
                                     <code>{{ file.path }}</code>
                                     {% if file.oldPath %}<span class="text-muted">(anciennement <code>{{ file.oldPath }}</code>)</span>{% endif %}
                                 </td>
-                                <td>{{ status_labels[file.status] ?? file.status }}</td>
+                                <td>{{ file.statusLabel }}</td>
                                 <td><span class="text-muted">+{{ file.additions }} −{{ file.deletions }}</span></td>
                             </tr>
                         {% endfor %}

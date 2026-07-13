@@ -64,7 +64,7 @@ final class GitDataCollector extends AbstractDataCollector
     }
 
     /**
-     * @return list<array{path: string, status: string, stage: string, oldPath: ?string, additions: int, deletions: int}>
+     * @return list<array{path: string, status: string, statusLabel: string, stage: string, stageLabel: string, oldPath: ?string, additions: int, deletions: int}>
      */
     public function getWorkingFiles(): array
     {
@@ -72,7 +72,7 @@ final class GitDataCollector extends AbstractDataCollector
     }
 
     /**
-     * @return list<array{path: string, status: string, stage: string, oldPath: ?string, additions: int, deletions: int}>
+     * @return list<array{path: string, status: string, statusLabel: string, stage: string, stageLabel: string, oldPath: ?string, additions: int, deletions: int}>
      */
     public function getUnpushedFiles(): array
     {
@@ -107,14 +107,16 @@ final class GitDataCollector extends AbstractDataCollector
     }
 
     /**
-     * @return array{path: string, status: string, stage: string, oldPath: ?string, additions: int, deletions: int}
+     * @return array{path: string, status: string, statusLabel: string, stage: string, stageLabel: string, oldPath: ?string, additions: int, deletions: int}
      */
     private function flattenFile(ChangedFile $file): array
     {
         return [
             'path' => $file->path,
-            'status' => $file->status,
-            'stage' => $file->stage,
+            'status' => $file->status->value,
+            'statusLabel' => $file->status->label(),
+            'stage' => $file->stage->value,
+            'stageLabel' => $file->stage->label(),
             'oldPath' => $file->oldPath,
             'additions' => $file->additions,
             'deletions' => $file->deletions,

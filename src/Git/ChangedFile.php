@@ -14,10 +14,8 @@ final readonly class ChangedFile
 {
     public function __construct(
         public string $path,
-        /** @var 'added'|'modified'|'deleted'|'renamed'|'untracked' */
-        public string $status,
-        /** @var 'staged'|'unstaged'|'untracked'|'committed' */
-        public string $stage,
+        public FileStatus $status,
+        public FileStage $stage,
         public ?string $oldPath = null,
         public int $additions = 0,
         public int $deletions = 0,
