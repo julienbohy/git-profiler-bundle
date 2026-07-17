@@ -1,9 +1,34 @@
 # GitProfilerBundle
 
+[![CI](https://github.com/julienbohy/git-profiler-bundle/actions/workflows/ci.yml/badge.svg)](https://github.com/julienbohy/git-profiler-bundle/actions/workflows/ci.yml)
+[![License](https://img.shields.io/github/license/julienbohy/git-profiler-bundle)](LICENSE)
+![PHP](https://img.shields.io/badge/PHP-8.3%2B-777BB4?logo=php&logoColor=white)
+![Symfony](https://img.shields.io/badge/Symfony-6.4%20%7C%207%20%7C%208-000000?logo=symfony&logoColor=white)
+
 Symfony bundle that exposes the Git state of the current repository — **branch**, **short commit**,
 **modified files** and **unpushed commits** — in a dedicated **Web Profiler** panel.
 
 > 🚧 Work in progress — not published on Packagist yet.
+
+## Features
+
+- Current **branch** and **short commit** of `HEAD`, in the profiler toolbar and panel.
+- Live toolbar counters for **locally modified files** (✎) and **unpushed commits** (↑).
+- Detailed **working-tree changes** — staged, unstaged and untracked — with their status
+  (added, modified, deleted, renamed…).
+- **Commits ahead of the upstream** (unpushed) with hash, message, author, date and the files they touch.
+- **Zero configuration** — active as soon as the Web Profiler is, in `dev`/`test` only.
+- **Graceful degradation** — no exception when the directory is not a Git repository or `git` is unavailable.
+
+## Screenshots
+
+The compact **toolbar** segment — branch and counters at a glance:
+
+![GitProfilerBundle segment in the Symfony debug toolbar](docs/assets/git-toolbar.png)
+
+The full **profiler panel** — working-tree changes and unpushed commits in detail:
+
+![GitProfilerBundle Git panel in the Symfony Web Profiler](docs/assets/git-panel.png)
 
 ## Requirements
 
@@ -14,7 +39,8 @@ Symfony bundle that exposes the Git state of the current repository — **branch
 
 ## Installation
 
-Until the bundle is on Packagist, consume it via a `path` Composer repository.
+Until the bundle is on Packagist, consume it directly from its GitHub repository via a `vcs` Composer
+repository — no local clone or symlink required.
 
 In the application `composer.json`:
 
@@ -22,9 +48,8 @@ In the application `composer.json`:
 {
     "repositories": [
         {
-            "type": "path",
-            "url": "../GitProfilerBundle",
-            "options": { "symlink": true }
+            "type": "vcs",
+            "url": "https://github.com/julienbohy/git-profiler-bundle"
         }
     ]
 }
@@ -33,14 +58,14 @@ In the application `composer.json`:
 Then:
 
 ```bash
-composer require --dev julienbohy/git-profiler-bundle:@dev
+composer require --dev julienbohy/git-profiler-bundle:dev-main
 ```
 
 > Once published: `composer require --dev julienbohy/git-profiler-bundle`.
 
 ### Registering the bundle
 
-With Symfony Flex the bundle is registered automatically. Otherwise, in `config/bundles.php`:
+The bundle is not shipped with a Symfony Flex recipe, so register it manually in `config/bundles.php`:
 
 ```php
 return [
@@ -76,23 +101,6 @@ Unpushed-commit detection:
 
 If the directory is not a Git repository (or if `git` is unavailable), the panel states it cleanly —
 no exception is thrown.
-
-## Architecture
-
-- `Git\GitRepositoryInterface` — port: `read(): ?GitInfo` (`null` = degradation).
-- `Git\GitRepository` — adapter relying on `gitonomy/gitlib`.
-- `Git\GitInfo` — immutable value object (`branch`, `shortCommit`, `isDirty`, `workingFiles`,
-  `hasUpstream`, `unpushedCommits`, `unpushedFiles`).
-- `Git\ChangedFile` — immutable value object of a changed file (`path`, `status`, `stage`,
-  `oldPath`, `additions`, `deletions`).
-- `Git\FileStatus`, `Git\FileStage` — backed-string enums for a file's status (added, modified,
-  deleted, renamed, untracked) and location (staged, unstaged, untracked, committed), with their
-  display labels (`label()`).
-- `Git\UnpushedCommit` — immutable value object of an unpushed commit (`shortHash`, `subject`,
-  `author`, `date`).
-- `DataCollector\GitDataCollector` — logic-free collector, delegates to the port, flattens the value
-  objects into scalars (profiler-serializable) and exposes the data to the
-  `@GitProfiler/Collector/git.html.twig` template.
 
 ## Tests
 
