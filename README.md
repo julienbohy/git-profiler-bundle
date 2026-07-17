@@ -1,5 +1,7 @@
 # GitProfilerBundle
 
+[![Latest Version](https://img.shields.io/packagist/v/julienbohy/git-profiler-bundle)](https://packagist.org/packages/julienbohy/git-profiler-bundle)
+[![Total Downloads](https://img.shields.io/packagist/dt/julienbohy/git-profiler-bundle)](https://packagist.org/packages/julienbohy/git-profiler-bundle)
 [![CI](https://github.com/julienbohy/git-profiler-bundle/actions/workflows/ci.yml/badge.svg)](https://github.com/julienbohy/git-profiler-bundle/actions/workflows/ci.yml)
 [![License](https://img.shields.io/github/license/julienbohy/git-profiler-bundle)](LICENSE)
 ![PHP](https://img.shields.io/badge/PHP-8.3%2B-777BB4?logo=php&logoColor=white)
@@ -7,8 +9,6 @@
 
 Symfony bundle that exposes the Git state of the current repository — **branch**, **short commit**,
 **modified files** and **unpushed commits** — in a dedicated **Web Profiler** panel.
-
-> 🚧 Work in progress — not published on Packagist yet.
 
 ## Features
 
@@ -39,29 +39,9 @@ The full **profiler panel** — working-tree changes and unpushed commits in det
 
 ## Installation
 
-Until the bundle is on Packagist, consume it directly from its GitHub repository via a `vcs` Composer
-repository — no local clone or symlink required.
-
-In the application `composer.json`:
-
-```json
-{
-    "repositories": [
-        {
-            "type": "vcs",
-            "url": "https://github.com/julienbohy/git-profiler-bundle"
-        }
-    ]
-}
-```
-
-Then:
-
 ```bash
-composer require --dev julienbohy/git-profiler-bundle:dev-main
+composer require --dev julienbohy/git-profiler-bundle
 ```
-
-> Once published: `composer require --dev julienbohy/git-profiler-bundle`.
 
 ### Registering the bundle
 

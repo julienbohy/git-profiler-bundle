@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-07-17
+
 ### Added
 
 - Web Profiler panel exposing the Git state of the current repository.
@@ -15,4 +17,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - List of commits ahead of the upstream branch, with the files they touch.
 - Graceful degradation when the directory is not a Git repository or `git` is unavailable.
 
-[Unreleased]: https://github.com/julienbohy/git-profiler-bundle/commits/main
+[Unreleased]: https://github.com/julienbohy/git-profiler-bundle/compare/0.1.1...HEAD
+[0.1.1]: https://github.com/julienbohy/git-profiler-bundle/releases/tag/0.1.1
