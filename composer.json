@@ -1,9 +1,14 @@
 {
     "name": "julienbohy/git-profiler-bundle",
-    "description": "Affiche les informations Git (branche, commit, état) dans le Web Profiler de Symfony.",
+    "description": "Displays Git information (branch, commit and working state) in the Symfony Web Profiler.",
     "type": "symfony-bundle",
     "license": "MIT",
     "keywords": ["symfony", "bundle", "profiler", "git", "data-collector"],
+    "homepage": "https://github.com/julienbohy/git-profiler-bundle",
+    "support": {
+        "issues": "https://github.com/julienbohy/git-profiler-bundle/issues",
+        "source": "https://github.com/julienbohy/git-profiler-bundle"
+    },
     "authors": [
         {
             "name": "Julien Bohy"
@@ -37,5 +42,10 @@
         "sort-packages": true
     },
     "minimum-stability": "stable",
-    "prefer-stable": true
+    "prefer-stable": true,
+    "extra": {
+        "branch-alias": {
+            "dev-main": "0.1.x-dev"
+        }
+    }
 }
