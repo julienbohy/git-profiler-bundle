@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Exclude development files (`tests/`, `docs/`, `.github/`, and other repository-only files) from the Composer dist archive via `.gitattributes`, so installs pull only the runtime code.
+
 ## [0.1.2] - 2026-07-17
 
 ### Changed
