@@ -21,7 +21,8 @@ on:
         default: false
 
 permissions:
-  contents: write # push commit + tag + create release via github.token
+  contents: write # push branch + tag + create release via github.token
+  pull-requests: write # open and squash-merge the changelog promotion PR
 
 concurrency:
   group: release
