@@ -13,6 +13,7 @@ final readonly class GitInfo
      * @param list<ChangedFile>    $workingFiles    uncommitted files in the working tree
      * @param list<UnpushedCommit> $unpushedCommits local commits ahead of the remote
      * @param list<ChangedFile>    $unpushedFiles   files touched by the unpushed commits
+     * @param list<GraphCommit>    $graphCommits    recent commits of HEAD and its upstream, log order
      */
     public function __construct(
         public string $branch,
@@ -22,6 +23,8 @@ final readonly class GitInfo
         public bool $hasUpstream = false,
         public array $unpushedCommits = [],
         public array $unpushedFiles = [],
+        public array $graphCommits = [],
+        public ?string $upstreamRef = null,
     ) {
     }
 }

@@ -10,6 +10,7 @@ use JulienBohy\GitProfilerBundle\Git\FileStage;
 use JulienBohy\GitProfilerBundle\Git\FileStatus;
 use JulienBohy\GitProfilerBundle\Git\GitInfo;
 use JulienBohy\GitProfilerBundle\Git\GitRepositoryInterface;
+use JulienBohy\GitProfilerBundle\Git\GraphCommit;
 use JulienBohy\GitProfilerBundle\Git\UnpushedCommit;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\HttpFoundation\Request;
@@ -75,6 +76,55 @@ final class GitDataCollectorTest extends TestCase
         self::assertSame(3, $unpushedFiles[0]['additions']);
     }
 
+    public function testExposesCommitGraphAsScalars(): void
+    {
+        $rootHash = str_repeat('c', 40);
+        $localHash = str_repeat('a', 40);
+        $remoteHash = str_repeat('b', 40);
+
+        $info = new GitInfo(
+            'main',
+            'abc1234',
+            false,
+            hasUpstream: true,
+            graphCommits: [
+                new GraphCommit($localHash, 'aaaaaaa', [$rootHash], 'local work', 'Alice', new \DateTimeImmutable('2026-08-14T10:00:00+00:00'), isHead: true),
+                new GraphCommit($remoteHash, 'bbbbbbb', [$rootHash], 'remote work', 'Bob', new \DateTimeImmutable('2026-08-14T09:00:00+00:00'), isUpstream: true, isPushed: true),
+                new GraphCommit($rootHash, 'ccccccc', [], 'init', 'Alice', new \DateTimeImmutable('2026-08-14T08:00:00+00:00'), isPushed: true),
+            ],
+            upstreamRef: 'origin/main',
+        );
+
+        $collector = $this->collectorReturning($info);
+
+        self::assertSame('origin/main', $collector->getUpstreamRef());
+        self::assertSame(2, $collector->getGraphLaneCount());
+
+        $rows = $collector->getGraphRows();
+        self::assertCount(3, $rows);
+
+        self::assertSame('aaaaaaa', $rows[0]['shortHash']);
+        self::assertSame('local work', $rows[0]['subject']);
+        self::assertSame('Alice', $rows[0]['author']);
+        self::assertSame('2026-08-14T10:00:00+00:00', $rows[0]['date']);
+        self::assertSame(0, $rows[0]['lane']);
+        self::assertSame([], $rows[0]['incomingLanes']);
+        self::assertSame([['from' => 0, 'to' => 0]], $rows[0]['segments']);
+        self::assertTrue($rows[0]['isHead']);
+        self::assertFalse($rows[0]['isUpstream']);
+        self::assertFalse($rows[0]['isPushed']);
+
+        self::assertSame(1, $rows[1]['lane']);
+        self::assertSame([0], $rows[1]['incomingLanes']);
+        self::assertSame([['from' => 0, 'to' => 0], ['from' => 1, 'to' => 0]], $rows[1]['segments']);
+        self::assertTrue($rows[1]['isUpstream']);
+        self::assertTrue($rows[1]['isPushed']);
+
+        self::assertSame(0, $rows[2]['lane']);
+        self::assertSame([0], $rows[2]['incomingLanes']);
+        self::assertSame([], $rows[2]['segments']);
+    }
+
     public function testDegradesGracefullyWhenNotAGitRepository(): void
     {
         $collector = $this->collectorReturning(null);
@@ -89,6 +139,9 @@ final class GitDataCollectorTest extends TestCase
         self::assertSame(0, $collector->getChangedFilesCount());
         self::assertSame(0, $collector->getUnpushedCommitsCount());
         self::assertFalse($collector->hasUpstream());
+        self::assertSame([], $collector->getGraphRows());
+        self::assertSame(0, $collector->getGraphLaneCount());
+        self::assertNull($collector->getUpstreamRef());
     }
 
     public function testExposesStableNameAndTemplate(): void

@@ -7,9 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Commit graph in the profiler panel: the recent commits of `HEAD` and its upstream drawn as an
+  SVG graph (lanes, merge and divergence curves), with `HEAD`/upstream badges and hollow dots for
+  commits not pushed to the upstream yet.
+
 ### Changed
 
 - Exclude development files (`tests/`, `docs/`, `.github/`, and other repository-only files) from the Composer dist archive via `.gitattributes`, so installs pull only the runtime code.
+
+### Fixed
+
+- A commit subject containing the raw field separator byte (0x1F) no longer empties the whole
+  unpushed-commits list: the subject is now the last parsed field (kept whole by the explode
+  limit) and malformed lines are skipped individually, as already done for the commit graph.
 
 ## [0.1.2] - 2026-07-17
 

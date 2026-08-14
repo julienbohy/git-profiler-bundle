@@ -70,6 +70,71 @@
             </div>
         </div>
 
+        {% if collector.graphRows is not empty %}
+            <style>
+                .git-graph { margin: 15px 0; }
+                .git-graph-row { display: flex; align-items: center; height: 28px; }
+                .git-graph-row:hover { background: rgba(128, 128, 128, .08); }
+                .git-graph-row svg { display: block; flex: none; margin-right: 10px; }
+                .git-graph-hash { flex: none; width: 75px; }
+                .git-graph-subject { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-right: 10px; }
+                .git-graph-author { flex: none; width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+                .git-graph-date { flex: none; width: 115px; text-align: right; }
+                .git-badge { display: inline-block; padding: 0 6px; border-radius: 9px; font-size: 11px; line-height: 16px; margin-left: 6px; color: #fff; }
+                .git-badge-head { background: #de4c36; }
+                .git-badge-upstream { background: #4e79a7; }
+            </style>
+
+            <h3>Commit graph</h3>
+            <p class="text-muted">
+                Recent commits of <code>HEAD</code>{% if collector.hasUpstream %} and its upstream <code>{{ collector.upstreamRef }}</code>{% endif %}.
+                {% if collector.hasUpstream %}Hollow dots are commits not pushed to the upstream yet.{% endif %}
+            </p>
+
+            {# One 28px-high SVG per row: lane lines in the cell, commit details beside. #}
+            {% set laneWidth = 16 %}
+            {% set rowHeight = 28 %}
+            {% set laneColors = ['#4e79a7', '#f28e2b', '#59a14f', '#b07aa1', '#e15759', '#76b7b2'] %}
+            {% set laneColorCount = laneColors|length %}
+            {% set centerY = rowHeight / 2 %}
+
+            <div class="git-graph">
+                {% for row in collector.graphRows %}
+                    <div class="git-graph-row">
+                        <svg width="{{ collector.graphLaneCount * laneWidth }}" height="{{ rowHeight }}" xmlns="http://www.w3.org/2000/svg">
+                            {% for lane in row.incomingLanes %}
+                                {% set x = lane * laneWidth + laneWidth / 2 %}
+                                <line x1="{{ x }}" y1="0" x2="{{ x }}" y2="{{ centerY }}" stroke="{{ laneColors[lane % laneColorCount] }}" stroke-width="2"/>
+                            {% endfor %}
+                            {% for segment in row.segments %}
+                                {% set x1 = segment.from * laneWidth + laneWidth / 2 %}
+                                {% set x2 = segment.to * laneWidth + laneWidth / 2 %}
+                                {% if segment.from == segment.to %}
+                                    <line x1="{{ x1 }}" y1="{{ centerY }}" x2="{{ x1 }}" y2="{{ rowHeight }}" stroke="{{ laneColors[segment.from % laneColorCount] }}" stroke-width="2"/>
+                                {% else %}
+                                    {# Vertical tangents at both ends so the curve joins the straight lines seamlessly. #}
+                                    <path d="M {{ x1 }} {{ centerY }} C {{ x1 }} {{ rowHeight }}, {{ x2 }} {{ centerY }}, {{ x2 }} {{ rowHeight }}" fill="none" stroke="{{ laneColors[max(segment.from, segment.to) % laneColorCount] }}" stroke-width="2"/>
+                                {% endif %}
+                            {% endfor %}
+                            {% set dotX = row.lane * laneWidth + laneWidth / 2 %}
+                            {% set dotColor = laneColors[row.lane % laneColorCount] %}
+                            {# Hollow only when "not pushed" is meaningful — without an upstream every dot stays filled. #}
+                            <circle cx="{{ dotX }}" cy="{{ centerY }}" r="4" stroke="{{ dotColor }}" stroke-width="2" fill="{{ collector.hasUpstream and not row.isPushed ? 'var(--base-0, #fff)' : dotColor }}"/>
+                        </svg>
+                        <span class="git-graph-hash"><code>{{ row.shortHash }}</code></span>
+                        <span class="git-graph-subject">
+                            {{ row.subject }}
+                            {# On a detached checkout the branch name is the literal "HEAD". #}
+                            {% if row.isHead %}<span class="git-badge git-badge-head">{{ collector.branch == 'HEAD' ? 'HEAD' : 'HEAD → ' ~ collector.branch }}</span>{% endif %}
+                            {% if row.isUpstream %}<span class="git-badge git-badge-upstream">{{ collector.upstreamRef }}</span>{% endif %}
+                        </span>
+                        <span class="git-graph-author text-muted">{{ row.author }}</span>
+                        <span class="git-graph-date text-muted">{{ row.date|date('Y-m-d H:i') }}</span>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
         <h3>Locally modified files</h3>
         {% if collector.workingFiles is empty %}
             <div class="empty">

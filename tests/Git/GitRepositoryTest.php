@@ -166,6 +166,158 @@ final class GitRepositoryTest extends TestCase
         self::assertSame([], $info->unpushedFiles);
     }
 
+    public function testGraphCommitsOnLinearRepositoryWithoutUpstream(): void
+    {
+        $this->initRepositoryWithCommit();
+        file_put_contents($this->dir . '/second.txt', "second\n");
+        $this->git('add', 'second.txt');
+        $this->git('commit', '-m', 'second');
+
+        $info = (new GitRepository($this->dir))->read();
+
+        self::assertNotNull($info);
+        self::assertNull($info->upstreamRef);
+        self::assertCount(2, $info->graphCommits);
+
+        [$head, $root] = $info->graphCommits;
+
+        self::assertSame('second', $head->subject);
+        self::assertMatchesRegularExpression('/^[0-9a-f]{40}$/', $head->hash);
+        self::assertMatchesRegularExpression('/^[0-9a-f]{7}$/', $head->shortHash);
+        self::assertSame([$root->hash], $head->parentHashes);
+        self::assertTrue($head->isHead);
+        self::assertFalse($head->isUpstream);
+        self::assertFalse($head->isPushed);
+        self::assertNotSame('', $head->author);
+        self::assertInstanceOf(\DateTimeImmutable::class, $head->date);
+
+        self::assertSame('init', $root->subject);
+        self::assertSame([], $root->parentHashes);
+        self::assertFalse($root->isHead);
+        self::assertFalse($root->isPushed);
+    }
+
+    public function testGraphCommitsWithDivergedUpstream(): void
+    {
+        $this->initRepositoryWithCommit();
+        $this->configureUpstream();
+
+        // One commit pushed to the upstream…
+        file_put_contents($this->dir . '/remote.txt', "remote\n");
+        $this->git('add', 'remote.txt');
+        $this->git('commit', '-m', 'remote work');
+        $this->git('push', 'origin', 'main');
+
+        // …then the local branch is rewound and diverges with its own commit.
+        $this->git('reset', '--hard', 'HEAD~1');
+        file_put_contents($this->dir . '/local.txt', "local\n");
+        $this->git('add', 'local.txt');
+        $this->git('commit', '-m', 'local work');
+
+        $info = (new GitRepository($this->dir))->read();
+
+        self::assertNotNull($info);
+        self::assertSame('origin/main', $info->upstreamRef);
+        self::assertCount(3, $info->graphCommits);
+
+        $bySubject = [];
+        foreach ($info->graphCommits as $commit) {
+            $bySubject[$commit->subject] = $commit;
+        }
+
+        $local = $bySubject['local work'] ?? null;
+        $remote = $bySubject['remote work'] ?? null;
+        $root = $bySubject['init'] ?? null;
+
+        self::assertNotNull($local);
+        self::assertTrue($local->isHead);
+        self::assertFalse($local->isUpstream);
+        self::assertFalse($local->isPushed);
+
+        self::assertNotNull($remote);
+        self::assertFalse($remote->isHead);
+        self::assertTrue($remote->isUpstream);
+        self::assertTrue($remote->isPushed);
+
+        self::assertNotNull($root);
+        self::assertFalse($root->isHead);
+        self::assertFalse($root->isUpstream);
+        self::assertTrue($root->isPushed);
+
+        // Both diverged commits fork from the root.
+        self::assertSame([$root->hash], $local->parentHashes);
+        self::assertSame([$root->hash], $remote->parentHashes);
+    }
+
+    public function testGraphSurvivesAFileNamedHead(): void
+    {
+        $this->initRepositoryWithCommit();
+        file_put_contents($this->dir . '/HEAD', "decoy\n");
+
+        // The ambiguity between the HEAD revision and the HEAD file only arises
+        // when git runs from inside the working tree — the common case when the
+        // profiled application is started from the project root.
+        $cwd = getcwd();
+        chdir($this->dir);
+
+        try {
+            $info = (new GitRepository($this->dir))->read();
+        } finally {
+            chdir((string) $cwd);
+        }
+
+        self::assertNotNull($info);
+        self::assertCount(1, $info->graphCommits);
+    }
+
+    public function testUnpushedCommitsSurviveASubjectContainingTheFieldSeparator(): void
+    {
+        $this->initRepositoryWithCommit();
+        $this->configureUpstream();
+
+        file_put_contents($this->dir . '/weird.txt', "weird\n");
+        $this->git('add', 'weird.txt');
+        $this->git('commit', '-m', "weird\x1fsubject");
+
+        $info = (new GitRepository($this->dir))->read();
+
+        self::assertNotNull($info);
+        self::assertTrue($info->hasUpstream);
+        self::assertCount(1, $info->unpushedCommits);
+        self::assertSame("weird\x1fsubject", $info->unpushedCommits[0]->subject);
+    }
+
+    public function testGraphSurvivesASubjectContainingTheFieldSeparator(): void
+    {
+        $this->initRepositoryWithCommit();
+        file_put_contents($this->dir . '/weird.txt', "weird\n");
+        $this->git('add', 'weird.txt');
+        $this->git('commit', '-m', "weird\x1fsubject");
+
+        $info = (new GitRepository($this->dir))->read();
+
+        self::assertNotNull($info);
+        self::assertCount(2, $info->graphCommits);
+        self::assertSame("weird\x1fsubject", $info->graphCommits[0]->subject);
+        self::assertSame('init', $info->graphCommits[1]->subject);
+    }
+
+    public function testGraphCommitsAreLimited(): void
+    {
+        $this->initRepositoryWithCommit();
+        file_put_contents($this->dir . '/file.txt', "v2\n");
+        $this->git('commit', '-am', 'v2');
+        file_put_contents($this->dir . '/file.txt', "v3\n");
+        $this->git('commit', '-am', 'v3');
+
+        $info = (new GitRepository($this->dir, graphCommitLimit: 2))->read();
+
+        self::assertNotNull($info);
+        self::assertCount(2, $info->graphCommits);
+        self::assertSame('v3', $info->graphCommits[0]->subject);
+        self::assertSame('v2', $info->graphCommits[1]->subject);
+    }
+
     private function initRepositoryWithCommit(): void
     {
         $this->git('init', '-b', 'main');
