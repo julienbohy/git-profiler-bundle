@@ -7,6 +7,9 @@ namespace JulienBohy\GitProfilerBundle\DataCollector;
 use JulienBohy\GitProfilerBundle\Git\ChangedFile;
 use JulienBohy\GitProfilerBundle\Git\GitRepositoryInterface;
 use JulienBohy\GitProfilerBundle\Git\UnpushedCommit;
+use JulienBohy\GitProfilerBundle\Graph\CommitGraph;
+use JulienBohy\GitProfilerBundle\Graph\CommitGraphLayout;
+use JulienBohy\GitProfilerBundle\Graph\GraphSegment;
 use Symfony\Bundle\FrameworkBundle\DataCollector\AbstractDataCollector;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -21,6 +24,8 @@ final class GitDataCollector extends AbstractDataCollector
     {
         $info = $this->repository->read();
 
+        $graph = (new CommitGraphLayout())->layout($info?->graphCommits ?? []);
+
         $this->data = [
             'available' => $info !== null,
             'branch' => $info?->branch,
@@ -30,6 +35,9 @@ final class GitDataCollector extends AbstractDataCollector
             'hasUpstream' => $info?->hasUpstream ?? false,
             'unpushedCommits' => array_map($this->flattenCommit(...), $info?->unpushedCommits ?? []),
             'unpushedFiles' => array_map($this->flattenFile(...), $info?->unpushedFiles ?? []),
+            'graphRows' => $this->flattenGraph($graph),
+            'graphLaneCount' => $graph->laneCount,
+            'upstreamRef' => $info?->upstreamRef,
         ];
     }
 
@@ -92,6 +100,24 @@ final class GitDataCollector extends AbstractDataCollector
         return $this->data['hasUpstream'] ?? false;
     }
 
+    /**
+     * @return list<array{shortHash: string, subject: string, author: string, date: string, lane: int, incomingLanes: list<int>, segments: list<array{from: int, to: int}>, isHead: bool, isUpstream: bool, isPushed: bool}>
+     */
+    public function getGraphRows(): array
+    {
+        return $this->data['graphRows'] ?? [];
+    }
+
+    public function getGraphLaneCount(): int
+    {
+        return $this->data['graphLaneCount'] ?? 0;
+    }
+
+    public function getUpstreamRef(): ?string
+    {
+        return $this->data['upstreamRef'] ?? null;
+    }
+
     public function getUnpushedCommitsCount(): int
     {
         return \count($this->getUnpushedCommits());
@@ -121,6 +147,39 @@ final class GitDataCollector extends AbstractDataCollector
             'additions' => $file->additions,
             'deletions' => $file->deletions,
         ];
+    }
+
+    /**
+     * @return list<array{shortHash: string, subject: string, author: string, date: string, lane: int, incomingLanes: list<int>, segments: list<array{from: int, to: int}>, isHead: bool, isUpstream: bool, isPushed: bool}>
+     */
+    private function flattenGraph(CommitGraph $graph): array
+    {
+        $rows = [];
+        $previousSegments = [];
+
+        foreach ($graph->rows as $row) {
+            $incoming = array_map(static fn (GraphSegment $segment) => $segment->toLane, $previousSegments);
+
+            $rows[] = [
+                'shortHash' => $row->commit->shortHash,
+                'subject' => $row->commit->subject,
+                'author' => $row->commit->author,
+                'date' => $row->commit->date->format(\DateTimeInterface::ATOM),
+                'lane' => $row->lane,
+                'incomingLanes' => array_values(array_unique($incoming)),
+                'segments' => array_map(
+                    static fn (GraphSegment $segment) => ['from' => $segment->fromLane, 'to' => $segment->toLane],
+                    $row->segments,
+                ),
+                'isHead' => $row->commit->isHead,
+                'isUpstream' => $row->commit->isUpstream,
+                'isPushed' => $row->commit->isPushed,
+            ];
+
+            $previousSegments = $row->segments;
+        }
+
+        return $rows;
     }
 
     /**

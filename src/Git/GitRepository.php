@@ -16,8 +16,15 @@ final readonly class GitRepository implements GitRepositoryInterface
      */
     private const FIELD_SEPARATOR = "\x1f";
 
-    public function __construct(private string $workingDirectory)
-    {
+    /**
+     * Upper bound for the commits shown in the history graph.
+     */
+    private const GRAPH_COMMIT_LIMIT = 30;
+
+    public function __construct(
+        private string $workingDirectory,
+        private int $graphCommitLimit = self::GRAPH_COMMIT_LIMIT,
+    ) {
     }
 
     public function read(): ?GitInfo
@@ -36,6 +43,8 @@ final readonly class GitRepository implements GitRepositoryInterface
 
             [$hasUpstream, $unpushedCommits, $unpushedFiles] = $this->collectUnpushed($repository);
 
+            [$graphCommits, $upstreamRef] = $this->collectGraphCommits($repository, $hasUpstream);
+
             return new GitInfo(
                 $branch,
                 $shortCommit,
@@ -44,6 +53,8 @@ final readonly class GitRepository implements GitRepositoryInterface
                 $hasUpstream,
                 $unpushedCommits,
                 $unpushedFiles,
+                $graphCommits,
+                $upstreamRef,
             );
         } catch (\Throwable) {
             // Not a Git repository, repository without commit, or git unavailable: degrade gracefully.
@@ -102,6 +113,74 @@ final readonly class GitRepository implements GitRepositoryInterface
             // No upstream, no remote, or detached HEAD: local degradation.
             return [false, [], []];
         }
+    }
+
+    /**
+     * Reads the recent commits of HEAD (and its upstream when configured) for the
+     * history graph, in log order with `--topo-order` so children precede parents.
+     *
+     * Wrapped in its own try/catch: a graph-specific failure must not break the
+     * rest of the panel.
+     *
+     * @return array{0: list<GraphCommit>, 1: ?string} [commits, upstream ref name]
+     */
+    private function collectGraphCommits(Repository $repository, bool $hasUpstream): array
+    {
+        try {
+            $headHash = $this->run($repository, 'rev-parse', ['HEAD']);
+            $upstreamHash = $hasUpstream ? $this->run($repository, 'rev-parse', ['@{u}']) : null;
+            $upstreamRef = $hasUpstream ? $this->run($repository, 'rev-parse', ['--abbrev-ref', '@{u}']) : null;
+
+            $unpushedHashes = [];
+            if ($hasUpstream) {
+                foreach ($this->lines($repository->run('rev-list', ['@{u}..HEAD'])) as $hash) {
+                    $unpushedHashes[$hash] = true;
+                }
+            }
+
+            // Subject last: as free text it may contain the separator, and the
+            // explode limit then keeps it whole. The trailing '--' disambiguates
+            // the refs from files bearing the same name (e.g. a file named HEAD).
+            $format = implode(self::FIELD_SEPARATOR, ['%H', '%P', '%an', '%aI', '%s']);
+            $refs = $hasUpstream ? ['HEAD', '@{u}'] : ['HEAD'];
+            $output = $repository->run('log', [
+                '--format=' . $format, '--topo-order', '-n', (string) $this->graphCommitLimit, ...$refs, '--',
+            ]);
+
+            $commits = [];
+            foreach ($this->lines($output) as $line) {
+                try {
+                    [$hash, $parents, $author, $date, $subject] = explode(self::FIELD_SEPARATOR, $line, 5);
+
+                    $commits[] = new GraphCommit(
+                        $hash,
+                        substr($hash, 0, 7),
+                        $parents === '' ? [] : explode(' ', $parents),
+                        $subject,
+                        $author,
+                        new \DateTimeImmutable($date),
+                        isHead: $hash === $headHash,
+                        isUpstream: $hash === $upstreamHash,
+                        isPushed: $hasUpstream && !isset($unpushedHashes[$hash]),
+                    );
+                } catch (\Throwable) {
+                    // Malformed line (e.g. separator injected through the author
+                    // name): skip this commit instead of discarding the graph.
+                }
+            }
+
+            return [$commits, $upstreamRef];
+        } catch (\Throwable) {
+            return [[], null];
+        }
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function lines(string $output): array
+    {
+        return array_values(array_filter(explode("\n", trim($output)), static fn (string $line) => $line !== ''));
     }
 
     /**

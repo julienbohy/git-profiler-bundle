@@ -14,6 +14,9 @@ Symfony bundle that exposes the Git state of the current repository — **branch
 
 - Current **branch** and **short commit** of `HEAD`, in the profiler toolbar and panel.
 - Live toolbar counters for **locally modified files** (✎) and **unpushed commits** (↑).
+- **Commit graph** — the recent commits of `HEAD` and its upstream drawn as a mini graph
+  (lanes, merge and divergence curves), with `HEAD`/upstream badges; when an upstream is
+  configured, hollow dots mark commits not pushed yet.
 - Detailed **working-tree changes** — staged, unstaged and untracked — with their status
   (added, modified, deleted, renamed…).
 - **Commits ahead of the upstream** (unpushed) with hash, message, author, date and the files they touch.
@@ -29,6 +32,10 @@ The compact **toolbar** segment — branch and counters at a glance:
 The full **profiler panel** — working-tree changes and unpushed commits in detail:
 
 ![GitProfilerBundle Git panel in the Symfony Web Profiler](docs/assets/git-panel.png)
+
+The **commit graph** — `HEAD` and its upstream at a glance, merges and divergence included:
+
+![Commit graph in the Git profiler panel](docs/assets/git-graph.png)
 
 ## Requirements
 
@@ -67,6 +74,9 @@ of **locally modified files** (✎) and the number of **unpushed commits** (↑)
 The **detailed panel** additionally shows:
 
 - the **short commit** of `HEAD`;
+- the **commit graph** — the last 30 commits of `HEAD` and its upstream, drawn with their lanes
+  and merge/divergence curves; when an upstream is configured, hollow dots are commits not
+  pushed yet, and badges mark `HEAD` and the upstream tip;
 - the **list of uncommitted working-tree files** (staged, unstaged, untracked) with their status
   (added, modified, deleted, renamed…);
 - the **list of local commits ahead of the remote** (unpushed) — short hash, message, author, date —
