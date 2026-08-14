@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- The release workflow now promotes the CHANGELOG through a short-lived squash-merged pull
+  request instead of pushing to `main` directly, which branch protection (pull request required,
+  admins included) rejects.
+
 ## [0.2.0] - 2026-08-14
 
 ### Added

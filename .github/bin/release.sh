@@ -1,11 +1,16 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Cut a release: bump SemVer, promote CHANGELOG [Unreleased], tag (no 'v'),
-# push, and create a GitHub Release. Drives git + gh CLI.
+# Cut a release: bump SemVer, promote CHANGELOG [Unreleased] through a
+# short-lived squash-merged PR (branch protection on main rejects direct
+# pushes), tag the merge commit (no 'v'), and create a GitHub Release.
+# Drives git + gh CLI.
 #
 # Usage: .github/bin/release.sh <patch|minor|major> [--version X.Y.Z] [--dry-run]
 # Requires: run on `main`, git + gh (authenticated), clean tree.
+# In CI the token needs `contents: write` + `pull-requests: write`, and the
+# repository setting "Allow GitHub Actions to create and approve pull
+# requests" must be enabled.
 
 REPO="julienbohy/git-profiler-bundle"
 CHANGELOG="CHANGELOG.md"
@@ -89,11 +94,31 @@ if [ "${CI:-}" = "true" ]; then
   git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 fi
 
+# Branch protection on main (pull request required, admins included, linear
+# history) rejects direct pushes, so the promotion lands through a short-lived
+# squash-merged PR.
+release_branch="release/$version"
+git checkout -b "$release_branch"
 git add "$CHANGELOG"
 git commit -m "chore(release): $version"
-git push origin HEAD:main
+git push origin "$release_branch"
 
-git tag -a "$version" -m "Release $version"
+pr_url="$(gh pr create --base main --head "$release_branch" \
+  --title "chore(release): $version" \
+  --body "Promotes CHANGELOG [Unreleased] to [$version]. Opened by the release workflow because branch protection forbids direct pushes to main.")"
+gh pr merge "$pr_url" --squash --delete-branch
+
+# The squash rewrites the commit: tag what actually landed on main.
+merge_oid=""
+for _ in 1 2 3 4 5; do
+  merge_oid="$(gh pr view "$pr_url" --json mergeCommit --jq '.mergeCommit.oid // empty')"
+  [ -n "$merge_oid" ] && break
+  sleep 2
+done
+[ -n "$merge_oid" ] || { echo "::error::could not resolve the squash merge commit of $pr_url"; exit 1; }
+
+git fetch origin main
+git tag -a "$version" -m "Release $version" "$merge_oid"
 git push origin "refs/tags/$version"
 
 notes_file="$(mktemp)"; printf '%s\n' "$notes" > "$notes_file"
