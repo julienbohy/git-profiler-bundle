@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- The commit-graph date column no longer wraps and bleeds out of its row on systems whose
+  font renders `YYYY-MM-DD HH:MM` wider than the previous fixed pixel width: the column now
+  uses a font-relative width (`ch`) with tabular digits and forbids wrapping.
+
 ## [0.2.1] - 2026-08-14
 
 ### Fixed

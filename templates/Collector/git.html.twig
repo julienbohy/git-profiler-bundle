@@ -79,7 +79,10 @@
                 .git-graph-hash { flex: none; width: 75px; }
                 .git-graph-subject { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-right: 10px; }
                 .git-graph-author { flex: none; width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-                .git-graph-date { flex: none; width: 115px; text-align: right; }
+                {# Font-relative width + tabular digits: a px width breaks as soon as the
+                   viewer's system font renders "YYYY-MM-DD HH:MM" wider, wrapping the date
+                   out of the fixed-height row. #}
+                .git-graph-date { flex: none; width: 17ch; text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
                 .git-badge { display: inline-block; padding: 0 6px; border-radius: 9px; font-size: 11px; line-height: 16px; margin-left: 6px; color: #fff; }
                 .git-badge-head { background: #de4c36; }
                 .git-badge-upstream { background: #4e79a7; }
