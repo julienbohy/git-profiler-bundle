@@ -98,7 +98,9 @@ final readonly class GitRepository implements GitRepositoryInterface
             // Throws when no upstream is configured (repository in debug mode by default).
             $repository->run('rev-parse', ['--verify', '--quiet', '@{u}']);
 
-            $format = implode(self::FIELD_SEPARATOR, ['%H', '%s', '%an', '%aI']);
+            // Subject last: as free text it may contain the separator, and the
+            // explode limit then keeps it whole.
+            $format = implode(self::FIELD_SEPARATOR, ['%H', '%an', '%aI', '%s']);
             $commits = $this->parseUnpushedCommits(
                 $repository->run('log', ['--format=' . $format, '@{u}..HEAD']),
             );
@@ -190,19 +192,20 @@ final readonly class GitRepository implements GitRepositoryInterface
     {
         $commits = [];
 
-        foreach (explode("\n", trim($output)) as $line) {
-            if ($line === '') {
-                continue;
+        foreach ($this->lines($output) as $line) {
+            try {
+                [$hash, $author, $date, $subject] = explode(self::FIELD_SEPARATOR, $line, 4);
+
+                $commits[] = new UnpushedCommit(
+                    substr($hash, 0, 7),
+                    $subject,
+                    $author,
+                    new \DateTimeImmutable($date),
+                );
+            } catch (\Throwable) {
+                // Malformed line (e.g. separator injected through the author
+                // name): skip this commit instead of discarding the list.
             }
-
-            [$hash, $subject, $author, $date] = explode(self::FIELD_SEPARATOR, $line, 4);
-
-            $commits[] = new UnpushedCommit(
-                substr($hash, 0, 7),
-                $subject,
-                $author,
-                new \DateTimeImmutable($date),
-            );
         }
 
         return $commits;

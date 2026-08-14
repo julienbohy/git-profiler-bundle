@@ -270,6 +270,23 @@ final class GitRepositoryTest extends TestCase
         self::assertCount(1, $info->graphCommits);
     }
 
+    public function testUnpushedCommitsSurviveASubjectContainingTheFieldSeparator(): void
+    {
+        $this->initRepositoryWithCommit();
+        $this->configureUpstream();
+
+        file_put_contents($this->dir . '/weird.txt', "weird\n");
+        $this->git('add', 'weird.txt');
+        $this->git('commit', '-m', "weird\x1fsubject");
+
+        $info = (new GitRepository($this->dir))->read();
+
+        self::assertNotNull($info);
+        self::assertTrue($info->hasUpstream);
+        self::assertCount(1, $info->unpushedCommits);
+        self::assertSame("weird\x1fsubject", $info->unpushedCommits[0]->subject);
+    }
+
     public function testGraphSurvivesASubjectContainingTheFieldSeparator(): void
     {
         $this->initRepositoryWithCommit();
